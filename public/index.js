@@ -3,7 +3,8 @@ const MAP_CLICK_FEATURE = 'MAP_CLICK_FEATURE';
 const MAP_CLOSE_POPUP = 'MAP_CLOSE_POPUP';
 const MAP_ZOOM_UPDATE = 'MAP_ZOOM_UPDATE';
 
-mapboxgl.accessToken = 'SET_YOUR_OWN_TOKEN';
+//-----ADD YOUR APP KEY HERE-----//
+mapboxgl.accessToken = 'pk.eyJ1IjoiYWxleGV5aWdvc2hpbiIsImEiOiJjaWlmeWkwaDYwMDJwdnJrcnBpMXJ4bnpjIn0.gDrXjZwtxFcXUeEbWiqw3w';
 
 var map = new mapboxgl.Map({
   container: 'map',
@@ -56,7 +57,7 @@ map.on('load', function() {
   let myself = true;
 
   const popup = new mapboxgl.Popup().on('close', () => {
-    if (myself) socket.emit(MAP_CLOSE_POPUP);
+    if (myself && !preventListening) socket.emit(MAP_CLOSE_POPUP);
     myself = true;
   });
 
@@ -180,13 +181,17 @@ map.on('load', function() {
     }
   });
 
+  const toggleTrackButton = document.querySelector('.toggleTrack');
+  let preventListening = false;
+  toggleTrackButton.addEventListener('click', () => preventListening = !preventListening);
+
   map.on('zoom', function() {
-    if (myself) socket.emit(MAP_ZOOM_UPDATE, map.getZoom());
+    if (myself && !preventListening) socket.emit(MAP_ZOOM_UPDATE, map.getZoom());
     myself = true;
   });
 
   map.on('drag', function() {
-    socket.emit(MAP_MOVE, map.getCenter());
+    !preventListening && socket.emit(MAP_MOVE, map.getCenter());
   });
 
   map.on('click', 'places', function(e) {
@@ -207,7 +212,7 @@ map.on('load', function() {
     // based on the feature found.
     showPopup(coordinates, description);
 
-    socket.emit(MAP_CLICK_FEATURE, e.features[0].properties.id);
+    !preventListening && socket.emit(MAP_CLICK_FEATURE, e.features[0].properties.id);
   });
 
   map.on('mouseenter', 'places', function() {
